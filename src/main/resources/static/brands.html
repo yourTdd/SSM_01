@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ssm案例-01</title>
+
+    <style>
+        .el-table .warning-row {
+            background: oldlace;
+        }
+
+        .el-table .success-row {
+            background: #f0f9eb;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+
+        <!--搜索表单-->
+        <el-form :inline="true" :model="dataList" class="demo-form-inline">
+
+            <el-form-item label="当前状态">
+                    <el-select v-model="dataList.status" placeholder="当前状态">
+                    <el-option label="启用" value="1"></el-option>
+                    <el-option label="禁用" value="0"></el-option>
+                </el-select>
+            </el-form-item>
+
+            <el-form-item label="企业名称">
+                <el-input v-model="dataList.companyName" placeholder="企业名称"></el-input>
+            </el-form-item>
+
+            <el-form-item label="品牌名称">
+                <el-input v-model="dataList.brandName" placeholder="品牌名称"></el-input>
+            </el-form-item>
+
+            <el-form-item>
+                <el-button type="primary" @click="getAll">查询</el-button>
+            </el-form-item>
+        </el-form>
+
+        <!-- 按钮 -->
+        <el-row>
+            <el-button type="danger" plain @click="deleteByS">批量删除</el-button>
+            <el-button type="primary" plain @click="handleAdd">新增</el-button>
+        </el-row>
+
+        <!-- 新增弹窗 -->
+        <el-dialog
+                title="新增模块"
+                :visible.sync="dialogVisible"
+                width="30%"
+        >
+
+            <el-form ref="form" :model="fromList" label-width="80px">
+                <el-form-item label="品牌名称">
+                    <el-input v-model="fromList.brandName"></el-input>
+                </el-form-item>
+                <el-form-item label="公司名称">
+                    <el-input v-model="fromList.companyName"></el-input>
+                </el-form-item>
+                <el-form-item label="排序">
+                    <el-input v-model="fromList.ordered"></el-input>
+                </el-form-item>
+                <el-form-item label="备注">
+                    <el-input type="textarea" v-model="fromList.description"></el-input>
+                </el-form-item>
+                <el-form-item label="状态">
+                    <el-switch v-model="fromList.status"
+                               active-value="1"
+                               inactive-value="0"
+                    ></el-switch>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="addBrand">提交</el-button>
+                    <el-button @click="dialogVisible = false">取 消</el-button>
+                </el-form-item>
+            </el-form>
+        </el-dialog>
+
+
+        <!--编辑表单-->
+        <el-dialog
+                title="修改模块"
+                :visible.sync="dialogVisibleEdit"
+                width="30%"
+        >
+
+            <el-form ref="form" :model="fromList" label-width="80px">
+                <el-form-item label="品牌名称">
+                    <el-input v-model="fromList.brandName"></el-input>
+                </el-form-item>
+                <el-form-item label="公司名称">
+                    <el-input v-model="fromList.companyName"></el-input>
+                </el-form-item>
+                <el-form-item label="排序">
+                    <el-input v-model="fromList.ordered"></el-input>
+                </el-form-item>
+                <el-form-item label="备注">
+                    <el-input type="textarea" v-model="fromList.description"></el-input>
+                </el-form-item>
+                <el-form-item label="状态">
+                    <el-switch v-model="fromList.status"
+                               active-value="1"
+                               inactive-value="0"
+                    ></el-switch>
+                    {{fromList.status}}
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="editBrand">提交</el-button>
+                    <el-button @click="dialogVisibleEdit = false">取 消</el-button>
+                </el-form-item>
+            </el-form>
+        </el-dialog>
+
+
+
+        <!--表格-->
+        <template>
+            <el-table
+                    :data="tableData"
+                    style="width: 100%"
+                    :row-class-name="tableRowClassName"
+                    @selection-change="handleSelectionChange">
+                <el-table-column
+                        type="selection"
+                        width="55">
+                </el-table-column>
+                <el-table-column
+                        type="index"
+                        width="50">
+                </el-table-column>
+                <el-table-column
+                        prop="brandName"
+                        label="品牌名称"
+                        width="180"
+                        align="center">
+                </el-table-column>
+                <el-table-column
+                        prop="companyName"
+                        label="企业名称"
+                        width="180"
+                        align="center">
+                </el-table-column>
+                <el-table-column
+                        prop="ordered"
+                        label="地址"
+                        align="center">
+                </el-table-column>
+                <el-table-column
+                        prop="status"
+                        label="当前状态"
+                        align="center">
+                </el-table-column>
+                <el-table-column
+                        label="操作"
+                        align="center">
+                    <template slot-scope="scope" >
+
+                        <el-row>
+                            <el-button type="primary" icon="el-icon-edit" circle @click="handleUpdate(scope.row)"></el-button>
+                            <el-button type="danger" icon="el-icon-delete" circle @click="deleteById(scope.row)"></el-button>
+                        </el-row>
+
+                    </template>
+                </el-table-column>
+            </el-table>
+        </template>
+
+        <!-- 分页工具条 -->
+        <div class="pagination-container">
+            <el-pagination
+                    class="pagination"
+                    @current-change="handleCurrentChange"
+                    :current-page="pagination.currentPage"
+                    :page-size="pagination.pageSize"
+                    layout="total, prev, pager, next, jumper"
+                    :total="pagination.total">
+            </el-pagination>
+        </div>
+        
+    </div>
+
+
+    <script src="js/vue.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+    <script src="element-ui/lib/index.js"></script>
+    <link rel="stylesheet" href="element-ui/lib/theme-chalk/index.css">
+
+    <script>
+
+
+        new Vue({
+            el:"#app",
+            data(){
+                return {
+                    dataList: {
+                        status:'',
+                        companyName:'',
+                        brandName:''
+                    },
+                    fromList: {},
+                    tableData: [],
+                    // 展示数据对话框
+                    dialogVisible: false,
+                    dialogVisibleEdit: false,
+                    // 当前页
+                    pagination: {
+                        currentPage: 1,
+                        pageSize: 10,
+                        total: 0
+                    }
+                }
+
+            },
+            mounted(){
+                // 页码加载完成后，发送异步请求，获取数据
+                this.getAll();
+            },
+
+            methods: {
+                getAll(){
+                    // 拼接参数
+                    param = "?status="+this.dataList.status;
+                    param += "&companyName="+this.dataList.companyName;
+                    param += "&brandName=" + this.dataList.brandName;
+
+
+                    axios.get("/brands/"+this.pagination.currentPage+"/"+this.pagination.pageSize+param).then((resp)=>{
+                        this.pagination.pageSize = resp.data.data.size;
+                        this.pagination.currentPage = resp.data.data.current;
+                        this.pagination.total = resp.data.data.total;
+                        this.tableData = resp.data.data.records;
+                    })
+                },
+                // 分页
+                handleCurrentChange(currentPage){
+                    this.pagination.currentPage = currentPage;
+                    this.getAll();
+                },
+                handleAdd(){
+                    this.dialogVisible = true;
+                    this.resetFrom();
+                },
+
+                resetFrom(){
+                    this.dataList={};
+                },
+
+                // 复选框选中执行的方法
+                handleSelectionChange(val) {
+                    this.multipleSelection = val;
+                },
+
+                // 批量删除
+                deleteByS() {
+
+                },
+                // 删除
+                deleteById(row){
+                    console.log(row.id)
+                    this.$confirm("此操作永久删除当前数据，是否继续？","提示",{
+                        type:"info"
+                    }).then(()=>{
+                        axios.delete("/brands/"+row.id).then((resp)=>{
+                            if (resp.data.code == 20021){
+                                this.$message.success("删除成功！");
+                                this.getAll();
+                            }else {
+                                this.$message.error("删除失败！");
+                            }
+                        });
+                    }).catch(()=>{
+                        this.$message.info("取消成功！");
+                    })
+
+                },
+                // 提交
+                addBrand(){
+                    axios.post("/brands",this.fromList).then((resp)=>{
+                        if (resp.data.code == 20011){
+                            this.dialogVisible=false;
+                            this.$message.success("添加成功！");
+                        }else if (resp.data.code == 20010){
+                            this.$message.error("添加失败！");
+                        }else {
+                            this.$message.error(resp.data.msg);
+                        }
+                    }).finally(()=>{
+                        this.resetFrom();
+                        this.getAll();
+                    })
+                },
+                // 弹出编辑表单
+                handleUpdate(row){
+                    console.log();
+                    axios.get("/brands/"+row.id).then((resp)=>{
+                        if (resp.data.code == 20041){
+                            // 展示弹层，加载数据
+                            this.fromList = resp.data.data;
+                            this.dialogVisibleEdit = true;
+                        }else {
+                            this.$message.error(resp.data.msg);
+                        }
+                    });
+                },
+                // 修改
+                editBrand(){
+                    axios.put("/brands",this.fromList).then((resp)=>{
+                        if (resp.data.code == 20031){
+                            this.dialogVisibleEdit=false;
+                            this.$message.success("修改成功！");
+                        }else if (resp.data.code == 20030){
+                            this.$message.error("修改失败！");
+                        }else {
+                            this.$message.error(resp.data.msg);
+                        }
+                    }).finally(()=>{
+                        this.getAll();
+                    })
+                },
+
+
+                // 间隔颜色
+                tableRowClassName({row, rowIndex}) {
+                    if (rowIndex === 1) {
+                        return 'warning-row';
+                    } else if (rowIndex === 3) {
+                        return 'success-row';
+                    }
+                    return '';
+                }
+            }
+        })
+    </script>
+
+</body>
+</html>
