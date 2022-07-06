@@ -1,0 +1,6 @@
+# SSM_01
+简单的一个小项目springboot+mybatisplus+vue+elementui+axios
+
+做了一些简单的增删改查的操作还有分页查询
+需要手动导入vue.js和axios还有elementui相关文件
+还有springboot的yml文件就要换成你自己的数据库了  
